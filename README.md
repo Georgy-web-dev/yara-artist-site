@@ -12,11 +12,18 @@ a rotating card-deck gallery, and three languages. No framework. No build step. 
 
 <sub>Vanilla JS · GSAP · SVG · CSS · ~1,900 lines</sub>
 
+<br>
+
+### [→ Open the live site](https://georgy-web-dev.github.io/yara-artist-site/)
+
+<sub>Best on desktop — a wide screen with a mouse gets the full chapter engine.<br>
+Phones and reduced-motion visitors get the scrolling fallback by design.</sub>
+
 </div>
 
 <br>
 
-![Title chapter](docs/screenshots/01-title.jpg)
+[![Title chapter](docs/screenshots/01-title.jpg)](https://georgy-web-dev.github.io/yara-artist-site/)
 
 <br>
 
