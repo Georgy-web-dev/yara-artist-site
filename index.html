@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YARA — Ярослава Артюшкіна</title>
+<meta name="description" content="YARA (Ярослава Артюшкіна) — вокалістка з Одеси. Tianjin Fest 2024, сольний концерт у Франції, національне телебачення.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script>
+/* Mode is decided before paint: "game" = fullscreen chapter engine,
+   "flow" = native scroll fallback (mobile / reduced motion) */
+(function () {
+  var game = window.matchMedia("(min-width: 961px) and (pointer: fine)").matches
+    && !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  document.documentElement.classList.add(game ? "mode-game" : "mode-flow");
+})();
+</script>
+</head>
+<body>
+
+<canvas id="dust" aria-hidden="true"></canvas>
+<div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
+
+<!-- Wave wipe overlay: a layered wave washes the old chapter away and
+     recedes to reveal the new one -->
+<svg class="wipe" id="wipe" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+  <defs>
+    <filter id="waveRough" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.10 0.16" numOctaves="2" seed="7" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.6" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+  <g filter="url(#waveRough)">
+    <path class="wave wave-violet" d=""></path>
+    <path class="wave wave-pink" d=""></path>
+    <path class="wave wave-froth" d=""></path>
+    <path class="wave wave-foam" d=""></path>
+    <g class="wave-bubbles" id="waveBubbles"></g>
+  </g>
+</svg>
+
+<!-- Preloader -->
+<div class="preloader" id="preloader">
+  <div class="preloader-inner">
+    <svg class="preloader-logo" viewBox="0 0 200 100" aria-hidden="true">
+      <text x="100" y="65" text-anchor="middle" class="preloader-logo-text">YARA</text>
+    </svg>
+    <div class="preloader-bar"><div class="preloader-bar-fill" id="preloaderFill"></div></div>
+    <span class="preloader-label" data-i18n="preloader.label">Завантаження</span>
+  </div>
+</div>
+
+<!-- HUD -->
+<header class="hud-top">
+  <a class="logo" href="#title" data-go="0"><img src="img/logo.png" alt="YARA"></a>
+  <div class="lang-switcher">
+    <button class="lang-btn active" data-lang="ua">UA</button>
+    <button class="lang-btn" data-lang="en">EN</button>
+    <button class="lang-btn" data-lang="ch">中</button>
+  </div>
+</header>
+
+<nav class="hud-nav" id="hudNav" aria-label="Chapters">
+  <button class="hud-link active" data-go="0"><span class="hud-num">01</span><span class="hud-label">YARA</span></button>
+  <button class="hud-link" data-go="1"><span class="hud-num">02</span><span class="hud-label" data-i18n="nav.about">Про мене</span></button>
+  <button class="hud-link" data-go="2"><span class="hud-num">03</span><span class="hud-label" data-i18n="nav.experience">Досвід</span></button>
+  <button class="hud-link" data-go="3"><span class="hud-num">04</span><span class="hud-label" data-i18n="nav.gallery">Галерея</span></button>
+  <button class="hud-link" data-go="4"><span class="hud-num">05</span><span class="hud-label" data-i18n="nav.video">Відео</span></button>
+  <button class="hud-link" data-go="5"><span class="hud-num">06</span><span class="hud-label" data-i18n="nav.music">Музика</span></button>
+  <button class="hud-link" data-go="6"><span class="hud-num">07</span><span class="hud-label" data-i18n="nav.contact">Контакти</span></button>
+</nav>
+
+<div class="hud-ghost" id="ghostNum" aria-hidden="true">01</div>
+
+<main id="stage">
+
+  <!-- 01 · TITLE -->
+  <section class="screen scr-title active" id="title" data-chapter="0">
+    <div class="title-media">
+      <video class="title-video" id="heroVideo" muted loop playsinline preload="auto" poster="img/video/hero-poster.jpg">
+        <source data-src-desktop="img/video/hero-desktop.mp4" data-src-mobile="img/video/hero-mobile.mp4" type="video/mp4">
+      </video>
+      <div class="title-shade"></div>
+    </div>
+    <div class="title-core">
+      <p class="title-kicker" data-i18n="hero.kicker">Ukraine · Odesa</p>
+      <h1 class="title-word" data-split-chars>YARA</h1>
+      <p class="title-tag" data-i18n="hero.tagline">Мелодії від щирого серця</p>
+    </div>
+    <div class="title-band" aria-hidden="true">
+      <div class="title-band-track">
+        <span data-i18n="marquee.text">TIANJIN FEST 2024 · СОЛЬНИЙ КОНЦЕРТ У ФРАНЦІЇ · НАЦІОНАЛЬНЕ ТБ · ОДЕСА, УКРАЇНА ·&nbsp;</span>
+        <span data-i18n="marquee.text">TIANJIN FEST 2024 · СОЛЬНИЙ КОНЦЕРТ У ФРАНЦІЇ · НАЦІОНАЛЬНЕ ТБ · ОДЕСА, УКРАЇНА ·&nbsp;</span>
+        <span data-i18n="marquee.text">TIANJIN FEST 2024 · СОЛЬНИЙ КОНЦЕРТ У ФРАНЦІЇ · НАЦІОНАЛЬНЕ ТБ · ОДЕСА, УКРАЇНА ·&nbsp;</span>
+        <span data-i18n="marquee.text">TIANJIN FEST 2024 · СОЛЬНИЙ КОНЦЕРТ У ФРАНЦІЇ · НАЦІОНАЛЬНЕ ТБ · ОДЕСА, УКРАЇНА ·&nbsp;</span>
+      </div>
+    </div>
+    <button class="sound-toggle" id="soundToggle" aria-pressed="false">
+      <span class="icon-sound-off">🔇</span>
+      <span class="icon-sound-on" hidden>🔊</span>
+    </button>
+    <div class="press-start" aria-hidden="true">
+      <span data-i18n="hero.scroll">Гортати</span><i>▼</i>
+    </div>
+  </section>
+
+  <!-- 02 · STORY -->
+  <section class="screen scr-story" id="about" data-chapter="1">
+    <div class="story-grid">
+      <div class="story-text">
+        <h2 class="scr-heading" data-i18n="about.title">Ярослава Артюшкіна</h2>
+        <p class="story-bio" data-i18n="about.p1">Я — Ярослава Артюшкіна, співачка з міста Одеса. З дитинства вокал став основою мого творчого шляху. Співаю з п'яти років, брала участь у десятках вокальних конкурсів, фестивалів та благодійних заходів в Україні й за кордоном.</p>
+        <div class="story-quote">
+          <p data-i18n="about.quote">Через музику ми прагнемо представити голос сучасної України: яскравої, творчої та незламної.</p>
+        </div>
+      </div>
+      <div class="story-portrait">
+        <img src="img/gallery/photos/photo-04.jpg" alt="Ярослава, фотопортрет">
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 · WORLD TOUR -->
+  <section class="screen scr-tour" id="experience" data-chapter="2">
+    <h2 class="scr-heading tour-heading" data-i18n="experience.title">Міжнародний досвід</h2>
+    <div class="tour-panels">
+      <article class="tour-panel">
+        <img src="img/gallery/photos/photo-08.jpg" alt="Виступ на Tianjin Fest 2024">
+        <div class="tour-meta">
+          <span class="tour-marker">2024</span>
+          <h3 data-i18n="experience.exp1title">TIANJIN FEST 2024 · Тяньцзінь, Китай</h3>
+          <p data-i18n="experience.exp1">Визнана однією з топ-виконавиць серед понад 40 країн. Усі пісні виконані наживо.</p>
+        </div>
+      </article>
+      <article class="tour-panel">
+        <img src="img/gallery/photos/photo-12.jpg" alt="Сольний концерт у Франції">
+        <div class="tour-meta">
+          <span class="tour-marker" data-i18n="experience.marker2">FR</span>
+          <h3 data-i18n="experience.exp2title">Сольний концерт у Франції</h3>
+          <p data-i18n="experience.exp2">Повноформатна програма авторських і кавер-пісень для європейської публіки.</p>
+        </div>
+      </article>
+      <article class="tour-panel">
+        <img src="img/gallery/photos/photo-07.jpg" alt="Ярослава з українським прапором на Великій Китайській стіні">
+        <div class="tour-meta">
+          <span class="tour-marker">TV</span>
+          <h3 data-i18n="experience.exp3title">Національне телебачення</h3>
+          <p data-i18n="experience.exp3">Сюжет на каналі «1+1» про культурну місію до Китаю.</p>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- 04 · GALLERY DECK -->
+  <section class="screen scr-deck" id="gallery" data-chapter="3">
+    <h2 class="scr-heading deck-heading" data-i18n="gallery.title">Галерея</h2>
+    <div class="deck-stage" id="deckStage"></div>
+    <div class="deck-hud">
+      <button class="deck-arrow deck-prev" aria-label="Previous">◀</button>
+      <span class="deck-counter" id="deckCounter">01 / 18</span>
+      <button class="deck-arrow deck-next" aria-label="Next">▶</button>
+    </div>
+  </section>
+
+  <!-- 05 · CUTSCENE -->
+  <section class="screen scr-video" id="video" data-chapter="4">
+    <div class="cut-bands" aria-hidden="true"><i></i><i></i></div>
+    <div class="cut-frame">
+      <div class="cut-item">
+        <div class="cut-video">
+          <iframe
+            src="https://www.youtube.com/embed/N_KEh4aAEf4"
+            title="YARA – Заспівайте, Мамо (Live Session)"
+            loading="lazy"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen></iframe>
+        </div>
+        <h3 class="cut-title" data-i18n="video.song">«Заспівайте, Мамо» (Live Session)</h3>
+      </div>
+      <div class="cut-item">
+        <div class="cut-video">
+          <iframe
+            src="https://www.youtube.com/embed/trXuX6SIrXc"
+            title="YARA – Joker Of Trumps (Music Video)"
+            loading="lazy"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen></iframe>
+        </div>
+        <h3 class="cut-title">«Joker Of Trumps» (Music Video)</h3>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 · SOUNDTRACK -->
+  <section class="screen scr-music" id="music" data-chapter="5">
+    <h2 class="scr-heading music-heading" data-i18n="music.title">Музика</h2>
+    <ol class="tracklist">
+      <li class="track"><span class="track-num">01</span><span class="track-name">Ode to the Girls</span><span class="track-soon" data-i18n="music.comingSoon">Скоро</span></li>
+      <li class="track"><span class="track-num">02</span><span class="track-name">Mother, Please Sing a Song</span><span class="track-soon" data-i18n="music.comingSoon">Скоро</span></li>
+      <li class="track"><span class="track-num">03</span><span class="track-name">Celine</span><span class="track-soon" data-i18n="music.comingSoon">Скоро</span></li>
+      <li class="track"><span class="track-num">04</span><span class="track-name">Coming to You</span><span class="track-soon" data-i18n="music.comingSoon">Скоро</span></li>
+      <li class="track"><span class="track-num">05</span><span class="track-name">Almighty</span><span class="track-soon" data-i18n="music.comingSoon">Скоро</span></li>
+    </ol>
+  </section>
+
+  <!-- 07 · CONTACT -->
+  <section class="screen scr-contact" id="contact" data-chapter="6">
+    <h2 class="scr-heading" data-i18n="contact.title">Контакти</h2>
+    <a href="mailto:yara.germetism@gmail.com" class="contact-mail">yara.germetism@gmail.com</a>
+    <div class="contact-rows">
+      <div class="contact-item">
+        <span class="contact-label" data-i18n="contact.phone">Телефон</span>
+        <a href="tel:+380680078827" class="contact-value">+38(068)-007-88-27</a>
+      </div>
+      <div class="contact-item">
+        <span class="contact-label" data-i18n="contact.manager">Менеджер</span>
+        <span class="contact-value">+38(093)-7-800-300 (Тарас Ярина)</span>
+      </div>
+    </div>
+    <div class="social-links">
+      <a href="#" class="social-link" aria-label="YouTube">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+      </a>
+      <a href="#" class="social-link" aria-label="Instagram">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>
+      </a>
+      <a href="#" class="social-link" aria-label="Facebook">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.413c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+      </a>
+    </div>
+    <p class="copyright">&copy; 2026 YARA. <span data-i18n="footer.rights">Усі права захищено.</span></p>
+  </section>
+
+</main>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" aria-label="Close">&times;</button>
+  <button class="lightbox-prev" aria-label="Previous">&#10094;</button>
+  <button class="lightbox-next" aria-label="Next">&#10095;</button>
+  <img src="" alt="" class="lightbox-img">
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
