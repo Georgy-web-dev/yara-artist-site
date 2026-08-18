@@ -10,12 +10,18 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <script>
-/* Mode is decided before paint: "game" = fullscreen chapter engine,
-   "flow" = native scroll fallback (mobile / reduced motion) */
+/* Decided before paint, as two INDEPENDENT axes:
+   - mode:   "game" = fullscreen chapter engine, "flow" = native scroll
+   - motion: whether this visitor accepts animation at all
+   Flow mode is reached two different ways -- a small/touch screen, or
+   reduced motion. Only the second one means "no animation", so the two
+   must not be collapsed into one class. */
 (function () {
-  var game = window.matchMedia("(min-width: 961px) and (pointer: fine)").matches
-    && !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  document.documentElement.classList.add(game ? "mode-game" : "mode-flow");
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var game = window.matchMedia("(min-width: 961px) and (pointer: fine)").matches && !reduce;
+  var c = document.documentElement.classList;
+  c.add(game ? "mode-game" : "mode-flow");
+  c.add(reduce ? "motion-off" : "motion-ok");
 })();
 </script>
 </head>

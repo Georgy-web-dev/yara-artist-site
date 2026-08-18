@@ -13,6 +13,14 @@
   const isGame = root.classList.contains("mode-game");
   const hasGsap = typeof gsap !== "undefined";
 
+  // Flow mode is NOT the same as "no motion": a phone gets the scrolling
+  // layout but still gets the wave, the dust and the per-chapter entrances.
+  // Only prefers-reduced-motion turns animation off. `motion` is the gate
+  // for everything decorative; it also implies GSAP is present, so any
+  // pre-hide keyed off it can never strand content invisible.
+  const motionOK = root.classList.contains("motion-ok");
+  const motion = hasGsap && motionOK;
+
   // A mode-boundary change (resize past 960px, reduced-motion toggle)
   // rebuilds the page in the right mode.
   window.matchMedia("(min-width: 961px) and (pointer: fine)")
@@ -72,7 +80,7 @@
   // loose ahead of the crest
   const bubblesGroup = document.getElementById("waveBubbles");
   const WAVE_BUBBLES = [];
-  if (isGame && bubblesGroup) {
+  if (motion && bubblesGroup) {
     for (let i = 0; i < 34; i++) {
       const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
       const edge = i % 2 ? "le" : "te";
@@ -159,7 +167,7 @@
       b.el.setAttribute("cy", cy.toFixed(2));
     }
   }
-  if (isGame) WAVE_LAYERS.forEach(drawWave);
+  if (motion) WAVE_LAYERS.forEach(drawWave);
 
   // Foam spray: white droplets bursting off the wave edge
   function spray(xvw, count) {
@@ -313,8 +321,8 @@
     return tl;
   }
 
-  // Title word split (game mode only; flow mode keeps plain text)
-  if (isGame) {
+  // Title word split -- needed by the char-slam entrance in BOTH modes
+  if (motion) {
     const titleEl = document.querySelector("[data-split-chars]");
     if (titleEl) {
       const text = titleEl.textContent;
@@ -449,6 +457,9 @@
     if (isGame) {
       if (animate) { deckScatter(); deckDeal(0); }
       else deckLayout(false);
+    } else if (flowDeckPaint) {
+      // Rebuilt on a language switch -- re-tilt the fresh cards.
+      flowDeckPaint();
     }
   }
 
@@ -507,6 +518,46 @@
     deckLayout(true, delay || 0);
   }
 
+  /* Flow-mode deck: the fanned pile does not survive a touch screen, so the
+     strip becomes the mobile equivalent -- cards tilt in 3D and dim by their
+     distance from centre as you swipe, echoing the desktop rotation-by-depth
+     instead of scrolling as flat thumbnails. Driven by scroll position on a
+     rAF, so it tracks a finger exactly and costs nothing when idle. */
+  let flowDeckPaint = null;
+
+  function initFlowDeck() {
+    if (isGame || !motion || !deckStage) return;
+    let queued = false;
+
+    function paint() {
+      queued = false;
+      const mid = deckStage.scrollLeft + deckStage.clientWidth / 2;
+      for (const card of deckCards) {
+        const w = card.offsetWidth;
+        // Laid out yet? Before layout w is 0 and every card would divide to
+        // +/-Infinity, pinning the whole strip at the clamp with no scroll
+        // event coming to correct it.
+        if (!w) return;
+        const c = card.offsetLeft + w / 2;
+        // -1 = one card-width left of centre, 0 = centred, 1 = right
+        const d = Math.max(-1.6, Math.min(1.6, (c - mid) / w));
+        const a = Math.abs(d);
+        card.style.transform = `perspective(900px) rotateY(${-d * 26}deg) scale(${1 - a * 0.12})`;
+        card.style.opacity = (1 - a * 0.42).toFixed(3);
+        card.style.zIndex = String(100 - Math.round(a * 50));
+      }
+    }
+
+    deckStage.addEventListener("scroll", () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(paint);
+    }, { passive: true });
+    window.addEventListener("resize", paint);
+    flowDeckPaint = paint;
+    paint();
+  }
+
   function deckGo(idx) {
     if (!isGame || deckLock) return;
     if (idx < 0 || idx >= deckCards.length || idx === deckIndex) return;
@@ -562,7 +613,7 @@
     if (!card) return;
     const img = card.querySelector("img");
     const apply = () => { lightboxImg.src = img.src; lightboxImg.alt = img.alt; };
-    if (animate && hasGsap && isGame) {
+    if (animate && motion) {
       gsap.to(lightboxImg, {
         opacity: 0, x: -24, duration: 0.13, ease: "power2.in",
         onComplete: () => {
@@ -598,7 +649,7 @@
 
   /* ---------------- Ambient dust ---------------- */
   (function initDust() {
-    if (!isGame) return;
+    if (!motion) return;
     const canvas = document.getElementById("dust");
     const ctx = canvas.getContext("2d");
     let w = 0, h = 0;
@@ -633,11 +684,14 @@
 
   /* ---------------- Cursor glow + click burst ---------------- */
   const cursorGlow = document.getElementById("cursorGlow");
+  // The glow follows a real cursor, so it stays desktop-only...
   if (isGame) {
     const glowX = gsap.quickTo(cursorGlow, "x", { duration: 0.5, ease: "power3.out" });
     const glowY = gsap.quickTo(cursorGlow, "y", { duration: 0.5, ease: "power3.out" });
     window.addEventListener("mousemove", (e) => { glowX(e.clientX); glowY(e.clientY); });
-
+  }
+  // ...but the burst fires at a tap just as well as at a click.
+  if (motion) {
     document.addEventListener("click", (e) => {
       for (let i = 0; i < 4; i++) {
         const s = document.createElement("i");
@@ -654,22 +708,82 @@
     });
   }
 
-  /* ---------------- Flow-mode reveals ---------------- */
+  /* ---------------- Flow-mode reveals ----------------
+     Two tiers, because flow mode is reached two different ways.
+
+     With motion allowed, a scrolled-to chapter runs the SAME bespoke
+     entrance timeline as game mode -- title chars slam, the quote band
+     scales from zero width, tour panels launch skewed, tracks fly in from
+     alternating sides. Scroll position replaces the wave as the trigger;
+     the choreography is identical.
+
+     With reduced motion, we keep the original plain fade-up, which is the
+     honest fallback rather than a downgraded version of the above.
+
+     Both tiers pre-hide from JS only, never from the stylesheet, so a dead
+     script or a missing GSAP leaves every chapter plainly visible. */
   if (!isGame && "IntersectionObserver" in window) {
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach((en) => {
-        if (en.isIntersecting) {
-          en.target.classList.add("in");
-          io.unobserve(en.target);
-        }
+    if (motion) {
+      // Hide each chapter before it is reached. playEnter builds from-tweens
+      // with immediateRender, so revealing and playing in the same frame
+      // never flashes a final-state frame first.
+      const pending = new Set(screens.slice(1));
+      pending.forEach((s) => { s.style.visibility = "hidden"; });
+
+      function reveal(screen) {
+        if (!pending.has(screen)) return;
+        pending.delete(screen);
+        io.unobserve(screen);
+        screen.style.visibility = "visible";
+        prepareEnter(screen);
+        playEnter(screen);
+        // The deck strip is measured on first paint; it only has real
+        // geometry once its chapter is on screen.
+        if (screen.id === "gallery" && flowDeckPaint) flowDeckPaint();
+        if (!pending.size) window.removeEventListener("scroll", onScroll);
+      }
+
+      const io = new IntersectionObserver(
+        (entries) => entries.forEach((en) => { if (en.isIntersecting) reveal(en.target); }),
+        { threshold: 0.2 }
+      );
+      // Chapter 0 is already on screen at load and is played by revealSite.
+      pending.forEach((s) => io.observe(s));
+
+      // Belt and braces. Hiding a chapter means its content now DEPENDS on a
+      // reveal firing, so a single missed observer callback would leave a
+      // chapter blank permanently. A rect check on scroll covers that, and
+      // whichever path arrives first wins -- `pending` makes reveal idempotent.
+      let queued = false;
+      function onScroll() {
+        if (queued) return;
+        queued = true;
+        requestAnimationFrame(() => {
+          queued = false;
+          pending.forEach((s) => {
+            const r = s.getBoundingClientRect();
+            if (r.top < window.innerHeight * 0.8 && r.bottom > 0) reveal(s);
+          });
+        });
+      }
+      window.addEventListener("scroll", onScroll, { passive: true });
+      onScroll();
+    } else {
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((en) => {
+          if (en.isIntersecting) {
+            en.target.classList.add("in");
+            io.unobserve(en.target);
+          }
+        });
+      }, { threshold: 0.12 });
+      document.querySelectorAll(
+        ".scr-heading, .story-bio, .story-quote, .story-portrait, .tour-panel, .cut-item, .track, .contact-mail, .contact-item, .social-links"
+      ).forEach((el) => {
+        el.classList.add("will-reveal");
+        io.observe(el);
       });
-    }, { threshold: 0.12 });
-    document.querySelectorAll(
-      ".scr-heading, .story-bio, .story-quote, .story-portrait, .tour-panel, .cut-item, .track, .contact-mail, .contact-item, .social-links"
-    ).forEach((el) => {
-      el.classList.add("will-reveal");
-      io.observe(el);
-    });
+    }
   }
 
   /* ---------------- Hero video + preloader ---------------- */
@@ -696,10 +810,12 @@
       : Promise.resolve();
     fontsReady.then(() => {
       heroVideo.play().catch(() => {});
-      if (hasGsap && isGame) {
+      if (motion) {
         // Load IS a wave transition: the wave is already covering the screen
         // when the preloader vanishes behind it; entrances arm under cover;
         // the wave recedes over content that is already animating in.
+        // Mobile gets this too -- it is the site's signature moment and the
+        // one transition that works identically without a chapter engine.
         transitioning = true;
         WAVE_LAYERS.forEach((L) => { L.le = 170; L.te = -80; drawWave(L); });
         preloader.classList.add("done");
@@ -770,5 +886,6 @@
 
   /* ---------------- Init ---------------- */
   deckBuild(false);
+  initFlowDeck();
   syncHud();
 })();

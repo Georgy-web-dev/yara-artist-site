@@ -62,7 +62,7 @@ button { font-family: inherit; color: inherit; }
   position: fixed; inset: 0; z-index: var(--z-dust);
   pointer-events: none;
 }
-.mode-flow #dust { display: none; }
+.motion-off #dust { display: none; }
 
 /* ===== CURSOR GLOW ===== */
 .cursor-glow {
@@ -81,7 +81,7 @@ button { font-family: inherit; color: inherit; }
   pointer-events: none;
   display: none;
 }
-.mode-game .wipe { display: block; }
+.mode-game .wipe, .mode-flow.motion-ok .wipe { display: block; }
 .wave-violet { fill: var(--violet); }
 .wave-pink { fill: var(--signature); }
 .wave-froth { fill: var(--ink); opacity: 0.45; } /* translucent frothy fringe */
@@ -441,11 +441,23 @@ button { font-family: inherit; color: inherit; }
 
 .mode-flow .deck-stage {
   display: flex; gap: 0.8rem; overflow-x: auto; scroll-snap-type: x mandatory;
-  padding: 1rem 0.25rem;
+  /* Full-bleed out of the chapter's padding: overflow-x clips at this box,
+     so an inset strip would cut the neighbouring cards off exactly where
+     they are supposed to peek in. */
+  width: 100vw; margin-inline: calc(50% - 50vw);
+  /* Side padding lets the first and last card reach the centre snap point.
+     Card + padding is kept under 100vw on purpose so the neighbours peek in
+     -- their tilt is what makes this read as a deck rather than a carousel. */
+  padding: 1rem 17vw;
+  scrollbar-width: none;
 }
+.mode-flow .deck-stage::-webkit-scrollbar { display: none; }
 .mode-flow .deck-card {
-  flex: 0 0 72vw; max-width: 320px; aspect-ratio: 3/4; scroll-snap-align: center;
+  flex: 0 0 64vw; max-width: 320px; aspect-ratio: 3/4; scroll-snap-align: center;
 }
+/* Scroll-driven tilt is written as an inline transform every frame by
+   initFlowDeck, so no transition here -- it would fight the finger. */
+.mode-flow.motion-ok .deck-card { will-change: transform, opacity; }
 .mode-flow .deck-card img { width: 100%; height: 100%; object-fit: cover; }
 
 .deck-hud {
