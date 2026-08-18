@@ -14,7 +14,7 @@ a rotating card-deck gallery, and three languages. No framework. No build step. 
 
 <br>
 
-### [→ Open the live site](https://georgy-web-dev.github.io/yara-artist-site/)
+[![Launch the site](https://img.shields.io/badge/▶%20%20LAUNCH%20THE%20SITE-e02d92?style=for-the-badge&logoColor=white&labelColor=140a1c)](https://georgy-web-dev.github.io/yara-artist-site/)
 
 <sub>Best on desktop — a wide screen with a mouse gets the full chapter engine.<br>
 Phones and reduced-motion visitors get the scrolling fallback by design.</sub>
@@ -164,15 +164,17 @@ Full rationale, including the colour rounds that got rejected on the way here, l
 
 <br>
 
-## Running it
+## Run it
 
-No build, no install. It needs a server only so the browser will serve the video and assets
-over HTTP rather than `file://`:
+Nothing to clone, install, or build. It is already deployed and running:
 
-```bash
-python -m http.server 8000
-# → http://localhost:8000
-```
+<div align="center">
+
+[![Launch the site](https://img.shields.io/badge/▶%20%20LAUNCH%20THE%20SITE-e02d92?style=for-the-badge&logoColor=white&labelColor=140a1c)](https://georgy-web-dev.github.io/yara-artist-site/)
+
+<sub>Served from GitHub Pages straight off `main` — no pipeline, because there is nothing to compile.</sub>
+
+</div>
 
 <br>
 
